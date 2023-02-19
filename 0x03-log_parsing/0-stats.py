@@ -1,39 +1,37 @@
 #!/usr/bin/python3
 '''a script that reads stdin line by line and computes metrics'''
 
+
 import sys
 
-# Initialize variables
+cache = {'200': 0, '301': 0, '400': 0, '401': 0,
+         '403': 0, '404': 0, '405': 0, '500': 0}
 total_size = 0
-status_codes = {200: 0, 301: 0, 400: 0, 401: 0, 403: 0, 404: 0, 405: 0, 500: 0}
-line_count = 0
+counter = 0
 
-# Read stdin line by line
-for line in sys.stdin:
-    # Split the line into its components
-    try:
-        ip_address, _, _, timestamp, _, request, status_code, file_size, *_ = line.split()
-    except ValueError:
-        # If the line doesn't match the expected format, skip it
-        continue
+try:
+    for line in sys.stdin:
+        line_list = line.split(" ")
+        if len(line_list) > 4:
+            code = line_list[-2]
+            size = int(line_list[-1])
+            if code in cache.keys():
+                cache[code] += 1
+            total_size += size
+            counter += 1
 
-    # Update metrics
-    status_code = int(status_code)
-    if status_code in status_codes:
-        status_codes[status_code] += 1
-    total_size += int(file_size)
-    line_count += 1
+        if counter == 10:
+            counter = 0
+            print('File size: {}'.format(total_size))
+            for key, value in sorted(cache.items()):
+                if value != 0:
+                    print('{}: {}'.format(key, value))
 
-    # Print statistics every 10 lines or when interrupted
-    if line_count % 10 == 0:
-        print(f'Total file size: {total_size}')
-        for code, count in sorted(status_codes.items()):
-            if count > 0:
-                print(f'{code}: {count}')
-        print()
+except Exception as err:
+    pass
 
-# Print final statistics
-print(f'Total file size: {total_size}')
-for code, count in sorted(status_codes.items()):
-    if count > 0:
-        print(f'{code}: {count}')
+finally:
+    print('File size: {}'.format(total_size))
+    for key, value in sorted(cache.items()):
+        if value != 0:
+            print('{}: {}'.format(key, value))
